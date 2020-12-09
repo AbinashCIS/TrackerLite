@@ -1,0 +1,11 @@
+{
+    "git.ignoreLimitWarning": true,
+    "python.formatting.provider": "yapf",
+    "python.linting.enabled": true,
+    "python.linting.pylintPath": "pylint",
+    "editor.formatOnSave": true,
+    "python.linting.pylintEnabled": true,
+    "python.formatting.yapfArgs": [
+        "--style={based_on_style: pep8, indent_width: 4, use_tabs: true}"
+    ],
+}
