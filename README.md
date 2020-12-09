@@ -31,4 +31,4 @@ python tracker.py --prototxt mobilenet_ssd/MobileNetSSD_deploy.prototxt --model 
 
 ## Docker
 
-Comming soon
+Coming soon
