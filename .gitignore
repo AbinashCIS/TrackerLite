@@ -1,1 +1,6 @@
 env/
+tracker/__pycache__/
+
+*.pyc
+*.mp4
+*.avi

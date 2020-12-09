@@ -170,7 +170,7 @@ while True:
 	# draw a horizontal line in the center of the frame -- once an
 	# object crosses this line we will determine whether they were
 	# moving 'up' or 'down'
-	cv2.line(frame, (0, H // 2), (W, H // 2), (0, 255, 255), 2)
+	# cv2.line(frame, (0, H // 2), (W, H // 2), (0, 255, 255), 2)
 	# use the centroid tracker to associate the (1) old object
 	# centroids with (2) the newly computed object centroids
 	objects = ct.update(rects)
@@ -222,10 +222,10 @@ while True:
 	    ("Status", status),
 	]
 	# loop over the info tuples and draw them on our frame
-	for (i, (k, v)) in enumerate(info):
-		text = "{}: {}".format(k, v)
-		cv2.putText(frame, text, (10, H - ((i * 20) + 20)),
-		            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+	# for (i, (k, v)) in enumerate(info):
+	# 	text = "{}: {}".format(k, v)
+	# 	cv2.putText(frame, text, (10, H - ((i * 20) + 20)),
+	# 	            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 	# check to see if we should write the frame to disk
 	if writer is not None:
 		writer.write(frame)
