@@ -47,6 +47,7 @@ CLASSES = [
     "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike",
     "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"
 ]
+active = {}
 # load our serialized model from disk
 print("[INFO] loading model...")
 net = cv2.dnn.readNetFromCaffe(args["prototxt"], args["model"])
@@ -138,6 +139,7 @@ while True:
 				# for the object
 				box = detections[0, 0, i, 3:7] * np.array([W, H, W, H])
 				(startX, startY, endX, endY) = box.astype("int")
+
 				# construct a dlib rectangle object from the bounding
 				# box coordinates and then start the dlib correlation
 				# tracker
@@ -171,6 +173,7 @@ while True:
 	# object crosses this line we will determine whether they were
 	# moving 'up' or 'down'
 	# cv2.line(frame, (0, H // 2), (W, H // 2), (0, 255, 255), 2)
+
 	# use the centroid tracker to associate the (1) old object
 	# centroids with (2) the newly computed object centroids
 	objects = ct.update(rects)
@@ -178,9 +181,11 @@ while True:
 	for (objectID, centroid) in objects.items():
 		# check to see if a trackable object exists for the current
 		# object ID
+		# cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
 		to = trackableObjects.get(objectID, None)
 		# if there is no existing trackable object, create one
 		if to is None:
+			print("NONe")
 			to = TrackableObject(objectID, centroid)
 		# otherwise, there is a trackable object so we can utilize it
 		# to determine direction
@@ -191,6 +196,20 @@ while True:
 			# 'up' and positive for 'down')
 			y = [c[1] for c in to.centroids]
 			direction = centroid[1] - np.mean(y)
+			# print(direction, objectID, end="\r")
+
+			# if direction in range(-20, 20):
+			# 	# time.sleep(1)
+			# 	print(direction)
+			# print(direction, end="\r")
+			if direction in np.arange(-20.0, 20.0):
+				if objectID in active:
+					active[objectID] += 1
+				else:
+					active[objectID] = 1
+				# print(active, end="\r")
+
+			# print(f"Direction : {direction}")
 			to.centroids.append(centroid)
 			# check to see if the object has been counted or not
 			if not to.counted:
@@ -211,9 +230,17 @@ while True:
 		# draw both the ID of the object and the centroid of the
 		# object on the output frame
 		text = "ID {}".format(objectID)
+		for id, frames in active.items():
+			if frames >= 11:
+				print("Stationary", objectID, end="\r")
+				cv2.putText(frame, "Active",
+				            (centroid[0] - 30, centroid[1] - 30),
+				            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+		cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 0, 255), 2)
 		cv2.putText(frame, text, (centroid[0] - 10, centroid[1] - 10),
-		            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-		cv2.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+		            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+		cv2.circle(frame, (centroid[0], centroid[1]), 4, (0, 0, 255), -1)
+
 	# construct a tuple of information we will be displaying on the
 	# frame
 	info = [
