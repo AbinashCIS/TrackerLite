@@ -1,3 +1,5 @@
+![image info](./tracking.gif)
+
 # Person Tracking
 
 Tracking person in realtime using SSD MobileNet, OpenCV and DLib.
