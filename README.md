@@ -35,3 +35,6 @@ Run the following commands
 sudo docker build -t trackerlite .
 sudo docker run -it trackerlite
 ```
+##TODO
+- Add Yolov4 for Detection
+- Fix drawing bounding boxes problem
