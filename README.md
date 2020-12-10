@@ -55,4 +55,5 @@ sudo docker run -it trackerlite
 
 - Add Yolov4 for Detection
 - Fix drawing bounding boxes problem
-- Active person in csv file
+- ~~Active person in csv file
+- ~~Red bounding box for active person
