@@ -43,11 +43,16 @@ python tracker.py --prototxt mobilenet_ssd/MobileNetSSD_deploy.prototxt --model 
 ```
 
 ## Docker
+
 Run the following commands
+
 ```
 sudo docker build -t trackerlite .
 sudo docker run -it trackerlite
 ```
+
 ## TODO
+
 - Add Yolov4 for Detection
 - Fix drawing bounding boxes problem
+- Active person in csv file

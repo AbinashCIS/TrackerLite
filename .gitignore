@@ -1,8 +1,10 @@
 env/
-tracker/__pycache__/
-
+tracker/__pycache__/*
+tracker/__pycache__
 *.pyc
 *.mp4
 *.avi
+*.csv
+output/*
 output/*.avi
-output/*.avi
+output/output_01.avi

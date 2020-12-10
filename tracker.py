@@ -80,7 +80,7 @@ else:
 print("[INFO] processing video ...")
 # open csv file
 with open(f"output/result.csv", 'w') as f:
-	f.write("Time,People Count Changed,TotalCount,ActivePerson,")
+	f.write("Time,People Count Changed,TotalCount,ActivePerson,\n")
 
 # def write_csv():
 # 	with open("output/result.csv", "w") as f:
@@ -114,6 +114,8 @@ prev_sum = 0
 prev_roi = np.array([0, 0, 0])
 prev_dist = 0
 active_obj = {}
+people_count = 0
+total_count = 0
 
 
 def check_active():
@@ -125,11 +127,22 @@ def check_active():
 	# print(active_obj, end="\r")
 
 
+def write_csv():
+	with open("output/result.csv", "a") as f:
+
+		f.write(
+		    f"{datetime.now()},{len(active_obj) if len(active_obj) > people_count else 0},{len(active_obj) if len(active_obj) > total_count else total_count},{len(active_obj)}\n"
+		)
+
+
 scheduler = BackgroundScheduler()
 scheduler.start()
+
 scheduler.add_job(func=check_active,
                   args=[],
                   trigger=IntervalTrigger(seconds=1))
+
+scheduler.add_job(func=write_csv, args=[], trigger=IntervalTrigger(seconds=2))
 # loop over frames from the video stream
 while True:
 	# grab the next frame and handle if we are reading from either
@@ -288,7 +301,13 @@ while True:
 		# draw both the ID of the object and the centroid of the
 		# object on the output frame
 		text = "ID {}".format(objectID)
-		cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 0, 255), 2)
+		if objectID in active_obj and "time" in active_obj[
+		    objectID] and active_obj[objectID]["time"] > 5:
+			cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 0, 255),
+			              2)
+		else:
+			cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0),
+			              2)
 		cv2.putText(frame, text, (centroid[0] - 10, centroid[1] - 10),
 		            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 		cv2.circle(frame, (centroid[0], centroid[1]), 4, (0, 0, 255), -1)
