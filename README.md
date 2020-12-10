@@ -30,5 +30,8 @@ python tracker.py --prototxt mobilenet_ssd/MobileNetSSD_deploy.prototxt --model 
 ```
 
 ## Docker
-
-Coming soon
+Run the following commands
+```
+sudo docker build -t trackerlite .
+sudo docker run -it trackerlite
+```
