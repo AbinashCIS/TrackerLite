@@ -82,15 +82,6 @@ print("[INFO] processing video ...")
 with open(f"output/result.csv", 'w') as f:
 	f.write("Time,People Count Changed,TotalCount,ActivePerson,\n")
 
-# def write_csv():
-# 	with open("output/result.csv", "w") as f:
-# 		f.write(f"")
-# scheduler = BackgroundScheduler()
-# scheduler.start()
-# scheduler.add_job(func=write_csv,
-#                   args=[],
-#                   trigger=IntervalTrigger(seconds=2))
-
 # initialize the video writer (we'll instantiate later if need be)
 writer = None
 # initialize the frame dimensions (we'll set them as soon as we read

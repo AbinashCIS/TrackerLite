@@ -1,4 +1,4 @@
-![image info](./tracking.gif)
+![title](./tracking.gif)
 
 # Person Tracking
 
