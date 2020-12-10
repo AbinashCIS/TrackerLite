@@ -12,9 +12,7 @@ import cv2
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-import sys
-from scipy.spatial import distance
-from math import dist
+
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-p",
@@ -43,16 +41,6 @@ ap.add_argument("-s",
                 type=int,
                 default=30,
                 help="# of skip frames between detections")
-ap.add_argument("-t",
-                "--time",
-                type=int,
-                default=5,
-                help="number of seconds to count as a active person")
-ap.add_argument("-v",
-                "--view",
-                type=bool,
-                default=False,
-                help="view realtime image processing")
 args = vars(ap.parse_args())
 
 # initialize the list of class labels MobileNet SSD was trained to
@@ -62,7 +50,7 @@ CLASSES = [
     "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike",
     "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"
 ]
-
+active = {}
 # load our serialized model from disk
 print("[INFO] loading model...")
 net = cv2.dnn.readNetFromCaffe(args["prototxt"], args["model"])
@@ -77,7 +65,6 @@ else:
 	print("[INFO] opening video file...")
 	vs = cv2.VideoCapture(args["input"])
 
-print("[INFO] processing video ...")
 # open csv file
 with open(f"output/result.csv", 'w') as f:
 	f.write("Time,People Count Changed,TotalCount,ActivePerson,")
@@ -110,26 +97,7 @@ totalDown = 0
 totalUp = 0
 # start the frames per second throughput estimator
 fps = FPS().start()
-prev_sum = 0
-prev_roi = np.array([0, 0, 0])
-prev_dist = 0
-active_obj = {}
 
-
-def check_active():
-	for obj in active_obj.values():
-		if "time" in obj:
-			obj["time"] = obj["time"] + 1
-		else:
-			obj["time"] = 1
-	# print(active_obj, end="\r")
-
-
-scheduler = BackgroundScheduler()
-scheduler.start()
-scheduler.add_job(func=check_active,
-                  args=[],
-                  trigger=IntervalTrigger(seconds=1))
 # loop over frames from the video stream
 while True:
 	# grab the next frame and handle if we are reading from either
@@ -193,9 +161,6 @@ while True:
 				# tracker
 				tracker = dlib.correlation_tracker()
 				rect = dlib.rectangle(startX, startY, endX, endY)
-
-				# print(roi.shape)
-
 				tracker.start_track(rgb, rect)
 				# add the tracker to our list of trackers so we can
 				# utilize it during skip frames
@@ -229,33 +194,14 @@ while True:
 	# centroids with (2) the newly computed object centroids
 	objects = ct.update(rects)
 	# loop over the tracked objects
-	for (objectID, centroid), rect in zip(objects.items(), rects):
-		# calculate euclidean distance between current obj and prev obj
-		startX, startY, endX, endY = rect
-		roi = frame[startY:startY + endY, startX:startX + endX]
-		# cv2.imshow(str(objectID), roi)
-		try:
-			roi = cv2.resize(roi, (128, 128))
-		except:
-			continue
-		dist = np.linalg.norm(roi - prev_roi)
-		dist = (dist - prev_dist) // 1000
-		print(active_obj, end='\r')
-		if dist in range(-20, 20):
-			if objectID in active_obj:
-				active_obj[objectID].update(
-				    {'frames': active_obj[objectID]["frames"] + 1})
-			else:
-				active_obj[objectID] = {"frames": 1}
-		# print(objectID, (dist - prev_dist) // 1000)
-		prev_roi = roi
-		prev_dist = dist
+	for (objectID, centroid) in objects.items():
 		# check to see if a trackable object exists for the current
 		# object ID
 		# cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
 		to = trackableObjects.get(objectID, None)
 		# if there is no existing trackable object, create one
 		if to is None:
+			print("NONe")
 			to = TrackableObject(objectID, centroid)
 		# otherwise, there is a trackable object so we can utilize it
 		# to determine direction
@@ -266,6 +212,18 @@ while True:
 			# 'up' and positive for 'down')
 			y = [c[1] for c in to.centroids]
 			direction = centroid[1] - np.mean(y)
+			# print(direction, objectID, end="\r")
+
+			# if direction in range(-20, 20):
+			# 	# time.sleep(1)
+			# 	print(direction)
+			# print(direction, end="\r")
+			if direction in np.arange(-20.0, 20.0):
+				if objectID in active:
+					active[objectID] += 1
+				else:
+					active[objectID] = 1
+				# print(active, end="\r")
 
 			# print(f"Direction : {direction}")
 			to.centroids.append(centroid)
@@ -288,19 +246,16 @@ while True:
 		# draw both the ID of the object and the centroid of the
 		# object on the output frame
 		text = "ID {}".format(objectID)
+		for id, frames in active.items():
+			if frames >= 11:
+				print("Stationary", objectID, end="\r")
+				cv2.putText(frame, "Active",
+				            (centroid[0] - 30, centroid[1] - 30),
+				            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 		cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 0, 255), 2)
 		cv2.putText(frame, text, (centroid[0] - 10, centroid[1] - 10),
 		            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 		cv2.circle(frame, (centroid[0], centroid[1]), 4, (0, 0, 255), -1)
-		for obj in active_obj.values():
-			if "time" in obj:
-				cv2.putText(frame, str(obj["time"]),
-				            (centroid[0] + 30, centroid[1] - 110),
-				            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-				if obj["time"] > args['time']:
-					cv2.putText(frame, "Active",
-					            (centroid[0] - 30, centroid[1] - 30),
-					            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
 	# construct a tuple of information we will be displaying on the
 	# frame
@@ -318,12 +273,11 @@ while True:
 	if writer is not None:
 		writer.write(frame)
 	# show the output frame
-	if args["view"] == True:
-		cv2.imshow("Frame", frame)
-		key = cv2.waitKey(1) & 0xFF
-		# if the `q` key was pressed, break from the loop
-		if key == ord("q"):
-			break
+	cv2.imshow("Frame", frame)
+	key = cv2.waitKey(1) & 0xFF
+	# if the `q` key was pressed, break from the loop
+	if key == ord("q"):
+		break
 	# increment the total number of frames processed thus far and
 	# then update the FPS counter
 	totalFrames += 1

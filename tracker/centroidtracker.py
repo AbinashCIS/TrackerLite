@@ -93,7 +93,8 @@ class CentroidTracker():
 			usedCols = set()
 			# loop over the combination of the (row, column) index
 			# tuples
-			for (row, col) in zip(rows, cols):
+			for (row, col, rect) in zip(
+			    rows, cols, rects) if rects else (row, col) in zip(rows, cols):
 				# if we have already examined either the row or
 				# column value before, ignore it
 				# val
