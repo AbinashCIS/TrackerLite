@@ -8,3 +8,6 @@ tracker/__pycache__
 output/*
 output/*.avi
 output/output_01.avi
+tracker_yolo.py
+yolo/
+tracker(bak).py
