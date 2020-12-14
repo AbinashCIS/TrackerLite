@@ -9,5 +9,10 @@ output/*
 output/*.avi
 output/output_01.avi
 tracker_yolo.py
-yolo/
 tracker(bak).py
+counting_people.py
+.gitignore
+tracker/__pycache__/trackableobject.cpython-38.pyc
+tracker/__pycache__/centroidtracker.cpython-38.pyc
+yolo/yolov3.weights
+yolo/yolov4.weights

@@ -4,6 +4,7 @@ from imutils.video import VideoStream
 from imutils.video import FPS
 import numpy as np
 import argparse
+
 import imutils
 import time
 import cv2
@@ -14,8 +15,11 @@ import dlib
 import logging
 
 logging.basicConfig(level=logging.INFO,
-                    format='%(name)s - %(levelname)s - %(message)s')
+                    format='%(asctime)s | %(levelname)s | %(message)s ')
 logging.getLogger('apscheduler.executors.default').propagate = False
+logging.getLogger('apscheduler.scheduler').propagate = False
+logging.addLevelName(
+    logging.INFO, "\033[1;32m%s\033[1;0m" % logging.getLevelName(logging.INFO))
 
 ap = argparse.ArgumentParser()
 ap.add_argument("-p",
@@ -82,7 +86,7 @@ writer = None
 W = None
 H = None
 
-ct = CentroidTracker(maxDisappeared=150, maxDistance=30)
+ct = CentroidTracker(maxDisappeared=60, maxDistance=30)
 
 trackers = []
 trackableObject = {}
@@ -231,7 +235,7 @@ while True:
 				            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 				if obj["time"] > args["time"]:
 					cv2.putText(frame, "Active",
-					            (centroid[0] - 30, centroid[1] - 30),
+					            (centroid[0] - 28, centroid[1] - 30),
 					            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
 	if writer is not None:

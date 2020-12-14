@@ -17,6 +17,7 @@ class CentroidTracker():
 		# object is allowed to be marked as "disappeared" until we
 		# need to deregister the object from tracking
 		self.maxDisappeared = maxDisappeared
+		self.maxDistance = maxDistance
 
 	def register(self, centroid):
 		# when registering an object we use the next available object
@@ -100,6 +101,9 @@ class CentroidTracker():
 				# val
 				if row in usedRows or col in usedCols:
 					continue
+
+				# if D[row, col] > self.maxDistance:
+				# 	continue
 				# otherwise, grab the object ID for the current row,
 				# set its new centroid, and reset the disappeared
 				# counter
