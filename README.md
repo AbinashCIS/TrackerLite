@@ -39,9 +39,17 @@ pip install -r requirements.txt
 
 ## Run
 
+With SSD MobileNet
+
 ```
 python tracker.py --prototxt mobilenet_ssd/MobileNetSSD_deploy.prototxt --model mobilenet_ssd/MobileNetSSD_deploy.caffemodel --input videos/1.mp4 --output output/output_01.avi  -s 5
 
+```
+
+With Yolov3
+
+```
+python tracker2.py -y yolo --input videos/1.mp4 --output output/1.mp4 -s 1 -d 1 -c 0.7
 ```
 
 ## Docker

@@ -199,8 +199,8 @@ while True:
 			if objectID in active_obj:
 				if "frames_not_active" in active_obj[objectID] and active_obj[
 				    objectID]["frames_not_active"] > 300:
-					# del active_obj[objectID]
-					print("Delete obj")
+					del active_obj[objectID]
+					# print("Delete obj")
 				else:
 					active_obj[objectID].update({
 					    "frames_active":
