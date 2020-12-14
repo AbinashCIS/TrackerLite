@@ -73,7 +73,7 @@ writer = None
 W = None
 H = None
 
-ct = CentroidTracker(maxDisappeared=350)
+ct = CentroidTracker(maxDisappeared=20)
 
 trackers = []
 trackableObject = {}
@@ -86,12 +86,17 @@ totalFrames = 0
 
 
 def check_active():
-	for obj in active_obj.values():
-		if "frames_active" in obj and obj["frames_active"] > 5:
-			if "time" in obj:
-				obj["time"] = obj["time"] + 1
-			else:
-				obj["time"] = 1
+	try:
+		for id, obj in active_obj.items():
+			if "frames_not_active" in obj and obj["frames_not_active"] > 120:
+				del active_obj[id]
+			elif "frames_active" in obj and obj["frames_active"] > 5:
+				if "time" in obj:
+					obj["time"] = obj["time"] + 1
+				else:
+					obj["time"] = 1
+	except RuntimeError:
+		pass
 
 
 scheduler = BackgroundScheduler()
@@ -184,69 +189,69 @@ while True:
 			rects.append((startX, startY, endX, endY))
 	totalFrames += 1
 	objects = ct.update(rects)
-	for (objectID, centroid), rect in zip(objects.items(), rects):
-		startX, startY, endX, endY = rect
-		roi = frame[startY:startY + endY, startX:startX + endX]
+	print(active_obj)
+	if objects:
+		for (objectID, centroid), rect in zip(objects.items(), rects):
+			startX, startY, endX, endY = rect
+			roi = frame[startY:startY + endY, startX:startX + endX]
 
-		try:
-			roi = cv2.resize(roi, (128, 128))
-		except:
-			continue
-		dist = np.linalg.norm(roi - prev_roi)
-		dist = (dist - prev_dist) // 1000
-		print(dist)
-		if dist in range(-15, 15):
-			if objectID in active_obj:
-				if "frames_not_active" in active_obj[objectID] and active_obj[
-				    objectID]["frames_not_active"] > 300:
-					del active_obj[objectID]
-					# print("Delete obj")
-				else:
+			try:
+				roi = cv2.resize(roi, (128, 128))
+			except:
+				continue
+			dist = np.linalg.norm(roi - prev_roi)
+			dist = (dist - prev_dist) // 1000
+			# print(dist, objectID)
+			if dist in range(-15, 15):
+				if objectID in active_obj:
 					active_obj[objectID].update({
 					    "frames_active":
 					    active_obj[objectID]["frames_active"] + 1
 					})
+				else:
+					active_obj[objectID] = {"frames_active": 1}
+
+			prev_roi = roi
+			prev_dist = dist
+			# print(active_obj)
+			to = trackableObject.get(objectID, None)
+			if to is None:
+				to = TrackableObject(objectID, centroid)
 			else:
-				active_obj[objectID] = {"frames_active": 1}
-		elif objectID in active_obj:
-			if "frames_not_active" in active_obj[objectID]:
-				active_obj[objectID]["frames_not_active"] += 1
+				y = [c[1] for c in to.centroids]
+				direction = centroid[1] - np.mean(y)
+
+				to.centroids.append(centroid)
+
+			trackableObject[objectID] = to
+			text = f"ID {objectID}"
+			if objectID in active_obj and "time" in active_obj[
+			    objectID] and active_obj[objectID]["time"] > args["time"]:
+				cv2.rectangle(frame, (startX, startY), (endX, endY),
+				              (0, 0, 255), 2)
 			else:
-				active_obj[objectID]["frames_not_active"] = 1
-
-		prev_roi = roi
-		prev_dist = dist
-		print(active_obj)
-		to = trackableObject.get(objectID, None)
-		if to is None:
-			to = TrackableObject(objectID, centroid)
-		else:
-			y = [c[1] for c in to.centroids]
-			direction = centroid[1] - np.mean(y)
-
-			to.centroids.append(centroid)
-
-		trackableObject[objectID] = to
-		text = f"ID {objectID}"
-		if objectID in active_obj and "time" in active_obj[
-		    objectID] and active_obj[objectID]["time"] > args["time"]:
-			cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 0, 255),
-			              2)
-		else:
-			cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0),
-			              2)
-		cv2.putText(frame, text, (centroid[0] - 10, centroid[1] - 10),
-		            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-		cv2.circle(frame, (centroid[0], centroid[1]), 4, (0, 0, 255), -1)
-		for obj in active_obj.values():
-			if "time" in obj:
-				cv2.putText(frame, str(obj["time"]),
-				            (centroid[0] + 30, centroid[1] - 110),
-				            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-				if obj["time"] > args["time"]:
-					cv2.putText(frame, "Active",
-					            (centroid[0] - 28, centroid[1] - 30),
+				cv2.rectangle(frame, (startX, startY), (endX, endY),
+				              (0, 255, 0), 2)
+			cv2.putText(frame, text, (centroid[0] - 10, centroid[1] - 10),
+			            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+			cv2.circle(frame, (centroid[0], centroid[1]), 4, (0, 0, 255), -1)
+			for obj in active_obj.values():
+				if "time" in obj:
+					cv2.putText(frame, str(obj["time"]),
+					            (centroid[0] + 30, centroid[1] - 110),
 					            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+					if obj["time"] > args["time"]:
+						cv2.putText(frame, "Active",
+						            (centroid[0] - 28, centroid[1] - 30),
+						            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255),
+						            2)
+	else:
+		for id, obj in active_obj.items():
+			print(id, obj)
+			if "frames_not_active" in obj:
+				obj["frames_not_active"] += 1
+			else:
+				obj["frames_not_active"] = 1
 	if writer is not None:
 		writer.write(frame)
 
