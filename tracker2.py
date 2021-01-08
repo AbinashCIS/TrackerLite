@@ -8,6 +8,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 import argparse
 import logging
 import os
+
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s | %(levelname)s | %(message)s ')
 logging.getLogger('apscheduler.executors.default').propagate = False
@@ -67,13 +68,14 @@ with open(os.path.join(args["yolo"], "coco.names"), "rt") as f:
 cfg = os.path.join(args["yolo"], "yolov3-tiny.cfg")
 weights = os.path.join(args['yolo'], "yolov3-tiny.weights")
 
+logging.info("Loading Model ...")
 net = cv2.dnn.readNetFromDarknet(cfg, weights)
 
 writer = None
 W = None
 H = None
 
-ct = CentroidTracker(maxDisappeared=20)
+ct = CentroidTracker(maxDisappeared=40)
 
 trackers = []
 trackableObject = {}
@@ -90,7 +92,7 @@ def check_active():
 		for id, obj in active_obj.items():
 			if "frames_not_active" in obj and obj["frames_not_active"] > 120:
 				del active_obj[id]
-			elif "frames_active" in obj and obj["frames_active"] > 5:
+			elif "frames_active" in obj and obj["frames_active"] >= 1:
 				if "time" in obj:
 					obj["time"] = obj["time"] + 1
 				else:
@@ -201,7 +203,7 @@ while True:
 				continue
 			dist = np.linalg.norm(roi - prev_roi)
 			dist = (dist - prev_dist) // 1000
-			# print(dist, objectID)
+			print(dist, objectID)
 			if dist in range(-15, 15):
 				if objectID in active_obj:
 					active_obj[objectID].update({
