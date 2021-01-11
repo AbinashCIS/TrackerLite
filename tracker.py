@@ -4,7 +4,7 @@ from imutils.video import VideoStream
 from imutils.video import FPS
 import numpy as np
 import argparse
-
+from PIL import Image, ImageChops, ImageStat
 import imutils
 import time
 import cv2
@@ -86,7 +86,7 @@ writer = None
 W = None
 H = None
 
-ct = CentroidTracker(maxDisappeared=60, maxDistance=30)
+ct = CentroidTracker(maxDisappeared=30, maxDistance=30)
 
 trackers = []
 trackableObject = {}
@@ -105,10 +105,27 @@ people_count = 0
 total_count = 0
 
 
+def diff(im1_file, im2_file, ignore_alpha=False):
+
+	im1 = Image.fromarray(im1_file)
+	im2 = Image.fromarray(im2_file)
+
+	diff_img = ImageChops.difference(im1, im2)
+
+	stat = ImageStat.Stat(diff_img)
+	# stat.mean can be [r,g,b] or [r,g,b,a].
+	removed_channels = 1 if ignore_alpha and len(stat.mean) == 4 else 0
+	num_channels = len(stat.mean) - removed_channels
+	sum_channel_values = sum(stat.mean[:num_channels])
+	max_all_channels = num_channels * 255
+	diff_ratio = sum_channel_values / max_all_channels
+
+	return diff_ratio
+
+
 def check_active():
 	for obj in active_obj.values():
-		print(active_obj)
-		if "time" in obj and obj["frames"] > 15:
+		if "time" in obj and obj["frames"] > 20:
 			obj["time"] = obj["time"] + 1
 		elif obj["frames"] > 20:
 			obj["time"] = 1
@@ -178,7 +195,6 @@ while True:
 			rects.append((startX, startY, endX, endY))
 
 	objects = ct.update(rects)
-	print(objects, rects)
 
 	for objID, _ in active_obj.items():
 		if objID not in objects:
@@ -190,15 +206,18 @@ while True:
 	for (objectID, centroid), rect in zip(objects.items(), rects):
 		startX, startY, endX, endY = rect
 		roi = frame[startY:startY + endY, startX:startX + endX]
-
 		try:
 			roi = cv2.resize(roi, (128, 128))
+			roi = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB)
 		except:
 			continue
+		if str(prev_roi) != str(np.array([0, 0, 0])):
+			print("dist", objectID, diff(roi, prev_roi) / 100)
 		dist = np.linalg.norm(roi - prev_roi)
-		dist = (dist - prev_dist) // 1000
+		dist = (dist - prev_dist) // 100
 		# print(dist, active_obj)
-		if dist in range(0, 30):
+		if dist in range(300, 400):
+
 			if objectID in active_obj:
 				active_obj[objectID].update({
 				    "last_frame":
@@ -212,14 +231,6 @@ while True:
 				    "last_frame": 0,
 				    "no_change": 0
 				}
-			# active_obj2 = active_obj
-			# for objectID in active_obj2:
-			# 	last = active_obj[objectID]["last_frame"]
-			# 	if (last + 1) == active_obj[objectID]["frames"]:
-			# 		active_obj.update(
-			# 		    {"no_change": active_obj[objectID]["no_change"] + 1})
-			# 	if active_obj[objectID]["no_change"] > 5:
-			# 		del active_obj[objectID]
 
 		prev_roi = roi
 		prev_dist = dist

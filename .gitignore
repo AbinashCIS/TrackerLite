@@ -5,6 +5,7 @@ tracker/__pycache__
 *.mp4
 *.avi
 *.csv
+*.pyc
 output/*
 output/*.avi
 output/output_01.avi
@@ -17,3 +18,5 @@ tracker/__pycache__/centroidtracker.cpython-38.pyc
 yolo/yolov3.weights
 yolo/yolov4.weights
 output/output_01.avi
+tracker/__pycache__/centroidtracker.cpython-38.pyc
+tracker/__pycache__/trackableobject.cpython-38.pyc

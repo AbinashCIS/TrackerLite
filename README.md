@@ -69,3 +69,4 @@ sudo docker run -it trackerlite
 - Improve active person algorithm / develop new one
 - ~~Active person in csv file~~
 - ~~Red bounding box for active person~~
+- Fix time counter overlapping
