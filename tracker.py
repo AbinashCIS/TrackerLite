@@ -107,9 +107,10 @@ total_count = 0
 
 def check_active():
 	for obj in active_obj.values():
-		if "time" in obj:
+		print(active_obj)
+		if "time" in obj and obj["frames"] > 15:
 			obj["time"] = obj["time"] + 1
-		else:
+		elif obj["frames"] > 20:
 			obj["time"] = 1
 
 
@@ -177,6 +178,15 @@ while True:
 			rects.append((startX, startY, endX, endY))
 
 	objects = ct.update(rects)
+	print(objects, rects)
+
+	for objID, _ in active_obj.items():
+		if objID not in objects:
+			# del active_obj[objID]
+			active_obj[objID] = {"frames": 1, "last_frame": 0, "no_change": 0}
+		# if obj not in objts:
+		# 	del active_obj[obj]
+
 	for (objectID, centroid), rect in zip(objects.items(), rects):
 		startX, startY, endX, endY = rect
 		roi = frame[startY:startY + endY, startX:startX + endX]
@@ -187,13 +197,29 @@ while True:
 			continue
 		dist = np.linalg.norm(roi - prev_roi)
 		dist = (dist - prev_dist) // 1000
-
-		if dist in range(-20, 20):
+		# print(dist, active_obj)
+		if dist in range(0, 30):
 			if objectID in active_obj:
-				active_obj[objectID].update(
-				    {"frames": active_obj[objectID]["frames"] + 1})
+				active_obj[objectID].update({
+				    "last_frame":
+				    active_obj[objectID]["frames"],
+				    "frames":
+				    active_obj[objectID]["frames"] + 1
+				})
 			else:
-				active_obj[objectID] = {"frames": 1}
+				active_obj[objectID] = {
+				    "frames": 1,
+				    "last_frame": 0,
+				    "no_change": 0
+				}
+			# active_obj2 = active_obj
+			# for objectID in active_obj2:
+			# 	last = active_obj[objectID]["last_frame"]
+			# 	if (last + 1) == active_obj[objectID]["frames"]:
+			# 		active_obj.update(
+			# 		    {"no_change": active_obj[objectID]["no_change"] + 1})
+			# 	if active_obj[objectID]["no_change"] > 5:
+			# 		del active_obj[objectID]
 
 		prev_roi = roi
 		prev_dist = dist
